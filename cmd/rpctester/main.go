@@ -1,16 +1,16 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/hkalina/fantom-rpc-tester/client"
+	"github.com/hkalina/fantom-rpc-tester/verifier"
 	"log"
 	"math/big"
 	"os"
+	"strconv"
 )
 
-var ftm *FtmBridge
-var startBlock big.Int
-var endBlock big.Int
+var ftm *client.FtmBridge
 
 func main() {
 	if len(os.Args) != 4 {
@@ -18,25 +18,26 @@ func main() {
 		os.Exit(1)
 	}
 
-	startBlock.SetString(os.Args[2], 10)
-	endBlock.SetString(os.Args[3], 10)
-
-	if startBlock.Cmp(&endBlock) != -1 {
-		fmt.Printf("The test [blockNumberStart] has to be less than [blockNumberEnd]\n")
+	startBlock, err := strconv.ParseInt(os.Args[2], 10, 64)
+	if err != nil {
+		log.Fatal("Invalid start block argument")
+	}
+	endBlock, err := strconv.ParseInt(os.Args[3], 10, 64)
+	if err != nil {
+		log.Fatal("Invalid end block argument")
+	}
+	if ! (startBlock < endBlock) {
+		fmt.Printf("The start block argument has to be less than end block argument\n")
 		os.Exit(1)
 	}
 
-	ftm = NewFtmBridge(os.Args[1])
+	ftm = client.NewFtmBridge(os.Args[1])
 	defer ftm.Close()
 
-	itxs, err := ftm.GetBlockInternalTxs(&startBlock)
-	if err != nil {
-		log.Fatal("GetBlockInternalTxs failed: ", err)
+	for i := startBlock; i < endBlock; i++ {
+		err := verifier.VerifyBlock(big.NewInt(i), ftm)
+		if err != nil {
+			log.Fatalf("VerifyBlock %d failed: %s", i, err)
+		}
 	}
-
-	bytes, err := json.Marshal(itxs)
-	if err != nil {
-		log.Fatal("JSON marshal failed: ", err)
-	}
-	fmt.Printf("%s\n", string(bytes))
 }

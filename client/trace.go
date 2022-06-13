@@ -1,9 +1,10 @@
-package main
+package client
 
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/hkalina/fantom-rpc-tester/rpctypes"
 	"log"
 	"math/big"
 )
@@ -22,29 +23,21 @@ type Call struct {
 	Value        *hexutil.Big   `json:"value"`
 	GasUsed      *hexutil.Big   `json:"gasUsed"`
 	Revert       bool           `json:"revert,omitempty"`
-	ErrorMessage string         `json:"error,omitempty"`
-	Calls        []Call         `json:"calls,omitempty"`
+	ErrorMessage string `json:"error,omitempty"`
+	Calls        []Call `json:"calls,omitempty"`
 }
 
-// InternalTx represents one internal transaction derived from a Call.
-type InternalTx struct {
-	From    common.Address `json:"from"`
-	To      common.Address `json:"to"`
-	Value   *hexutil.Big   `json:"value"`
-	GasUsed *hexutil.Big   `json:"gasUsed"`
-}
-
-func (data *Call) InternalTxs() (txs []InternalTx) {
+func (data *Call) InternalTxs() (txs []rpctypes.InternalTx) {
 	if data.Revert != false || data.ErrorMessage != "" {
 		return
 	}
 	// TODO: check data.Type?
 	if data.Value != nil && data.Value.ToInt().Sign() != 0 {
-		txs = append(txs, InternalTx{
+		txs = append(txs, rpctypes.InternalTx{
 			From:    data.From,
 			To:      data.To,
-			Value:   data.Value,
-			GasUsed: data.GasUsed,
+			Value:   (*big.Int)(data.Value),
+			GasUsed: (*big.Int)(data.GasUsed),
 		})
 	}
 	for _, child := range data.Calls {
