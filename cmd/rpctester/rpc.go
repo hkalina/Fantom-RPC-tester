@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"log"
+	"math/big"
 )
 
 type FtmBridge struct {
@@ -37,20 +38,10 @@ func (ftm *FtmBridge) Close() {
 	}
 }
 
-func (ftm *FtmBridge) GetCode(contract common.Address, block hexutil.Big) string {
-	var code string
-	if err := ftm.rpc.Call(&code, "eth_getCode", contract, block.String()); err != nil {
-		log.Printf("failed eth_getCode: %s", err)
-		return ""
-	}
-	return code
+func (ftm *FtmBridge) GetBalance(address common.Address, block *big.Int) (*big.Int, error) {
+	return ftm.eth.BalanceAt(context.Background(), address, block)
 }
 
-func (ftm *FtmBridge) GetBalance(address common.Address, block hexutil.Big) string {
-	var code string
-	if err := ftm.rpc.Call(&code, "eth_getBalance", address, block.String()); err != nil {
-		log.Printf("failed eth_getBalance: %s", err)
-		return ""
-	}
-	return code
+func (ftm *FtmBridge) GetBlock(block *big.Int) (*types.Block, error) {
+	return ftm.eth.BlockByNumber(context.Background(), block)
 }

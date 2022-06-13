@@ -1,9 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	"log"
 	"math/big"
 	"os"
 )
@@ -29,6 +29,24 @@ func main() {
 	ftm = NewFtmBridge(os.Args[1])
 	defer ftm.Close()
 
-	bal := ftm.GetBalance(common.HexToAddress("0x83A6524Be9213B1Ce36bCc0DCEfb5eb51D87aD10"), hexutil.Big(startBlock))
-	fmt.Printf("balance: %s\n", bal)
+	/*
+		bal, err := ftm.GetBalance(common.HexToAddress("0x83A6524Be9213B1Ce36bCc0DCEfb5eb51D87aD10"), &startBlock)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("balance: %s\n", bal)
+	*/
+
+	trace, err := ftm.TraceBlockByNumber(&startBlock)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, tx := range trace {
+		bytes, err := json.Marshal(tx.Result.InternalTxs())
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%s\n", string(bytes))
+	}
 }
