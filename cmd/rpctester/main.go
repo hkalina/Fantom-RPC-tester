@@ -29,24 +29,14 @@ func main() {
 	ftm = NewFtmBridge(os.Args[1])
 	defer ftm.Close()
 
-	/*
-		bal, err := ftm.GetBalance(common.HexToAddress("0x83A6524Be9213B1Ce36bCc0DCEfb5eb51D87aD10"), &startBlock)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("balance: %s\n", bal)
-	*/
-
-	trace, err := ftm.TraceBlockByNumber(&startBlock)
+	itxs, err := ftm.GetBlockInternalTxs(&startBlock)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("GetBlockInternalTxs failed: ", err)
 	}
 
-	for _, tx := range trace {
-		bytes, err := json.Marshal(tx.Result.InternalTxs())
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("%s\n", string(bytes))
+	bytes, err := json.Marshal(itxs)
+	if err != nil {
+		log.Fatal("JSON marshal failed: ", err)
 	}
+	fmt.Printf("%s\n", string(bytes))
 }

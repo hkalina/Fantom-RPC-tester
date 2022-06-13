@@ -38,7 +38,8 @@ func (data *Call) InternalTxs() (txs []InternalTx) {
 	if data.Revert != false || data.ErrorMessage != "" {
 		return
 	}
-	if data.Type == "CALL" && data.Value != nil && data.Value.ToInt().Sign() != 0 {
+	// TODO: check data.Type?
+	if data.Value != nil && data.Value.ToInt().Sign() != 0 {
 		txs = append(txs, InternalTx{
 			From:    data.From,
 			To:      data.To,
