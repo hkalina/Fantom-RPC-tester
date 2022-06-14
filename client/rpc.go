@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/hkalina/fantom-rpc-tester/rpctypes"
+	"log"
 	"math/big"
 )
 
@@ -64,14 +65,14 @@ func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int) (etxs []rpctypes.ExternalTx
 		}
 		txsHashes = append(txsHashes, etx.Hash)
 		if trace[i].Error != "" {
-			return nil, fmt.Errorf("trace of tx %s error: %s", tx.Hash, trace[i].Error)
+			log.Printf("trace of tx %s error: %s", tx.Hash, trace[i].Error)
+			etx.Revert = true
+		} else {
+			etx.InternalTxs = trace[i].Result.InternalTxs() // extract internal txs from trace
+			//etx.GasUsed = (*big.Int)(trace[i].Result.GasUsed)
+			etx.Revert = trace[i].Result.Revert
+			etx.ErrorMessage = trace[i].Result.ErrorMessage
 		}
-
-		etx.InternalTxs = trace[i].Result.InternalTxs() // extract internal txs from trace
-		//etx.GasUsed = (*big.Int)(trace[i].Result.GasUsed)
-		etx.Revert = trace[i].Result.Revert
-		etx.ErrorMessage = trace[i].Result.ErrorMessage
-
 		etxs = append(etxs, etx)
 	}
 
