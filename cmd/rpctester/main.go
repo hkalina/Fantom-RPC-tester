@@ -11,10 +11,11 @@ import (
 )
 
 var ftm *client.FtmBridge
+var debug bool
 
 func main() {
-	if len(os.Args) != 4 {
-		fmt.Printf("Usage: %s http://rpc1/ [blockNumberStart] [blockNumberEnd]\n", os.Args[0])
+	if len(os.Args) != 4 && len(os.Args) != 5 {
+		fmt.Printf("Usage: %s http://rpc1/ [blockNumberStart] [blockNumberEnd] [debug]\n", os.Args[0])
 		os.Exit(1)
 	}
 
@@ -31,11 +32,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	if len(os.Args) == 5 && os.Args[4] == "debug" {
+		debug = true
+	}
+
 	ftm = client.NewFtmBridge(os.Args[1])
 	defer ftm.Close()
 
 	for i := startBlock; i < endBlock; i++ {
-		err := verifier.VerifyBlock(big.NewInt(i), ftm)
+		err := verifier.VerifyBlock(big.NewInt(i), ftm, debug)
 		if err != nil {
 			log.Fatalf("VerifyBlock %d failed: %s", i, err)
 		}

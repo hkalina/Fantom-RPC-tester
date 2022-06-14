@@ -12,15 +12,19 @@ type BlockResult struct {
 	Hash common.Hash `json:"hash"`
 	Txs []BlockTransaction `json:"transactions"`
 	BaseFeePerGas hexutil.Big `json:"baseFeePerGas"`
+	Timestamp hexutil.Big `json:"timestamp"`
+	TimestampNano hexutil.Big `json:"timestampNano"`
 }
 
 type BlockTransaction struct {
 	Hash common.Hash `json:"hash"`
+	TxIndex hexutil.Big `json:"transactionIndex"`
 	From common.Address `json:"from"`
 	To common.Address `json:"to"`
 	Value hexutil.Big `json:"value"`
 	GasLimit hexutil.Big `json:"gas"`
 	GasPrice hexutil.Big `json:"gasPrice"`
+	Nonce hexutil.Big `json:"nonce"`
 }
 
 func (ftm *FtmBridge) GetBlock(block *big.Int) (*BlockResult, error) {
