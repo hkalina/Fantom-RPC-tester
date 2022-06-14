@@ -12,7 +12,7 @@ type BlockMovements struct {
 }
 
 func (bm *BlockMovements) Add(address common.Address, amount *big.Int) {
-	if address == (common.Address{}) {
+	if address == (common.Address{}) || address == common.HexToAddress("0xFC00FACE00000000000000000000000000000000") {
 		return // skip validation for zero address
 	}
 	item, exists := bm.Map[address]

@@ -1,6 +1,7 @@
 package client
 
 import (
+	_ "embed"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/eth/tracers"
@@ -8,6 +9,9 @@ import (
 	"log"
 	"math/big"
 )
+
+//go:embed call_tracer.js
+var callTracerCode string
 
 // TxTrace represents output of debug_trace for one transaction.
 type TxTrace struct {
@@ -48,9 +52,8 @@ func (data *Call) InternalTxs() (txs []rpctypes.InternalTx) {
 
 func (ftm *FtmBridge) TraceBlockByNumber(block *big.Int) ([]TxTrace, error) {
 	var result []TxTrace
-	tracer := "callTracer"
 	options := tracers.TraceConfig{
-		Tracer: &tracer,
+		Tracer: &callTracerCode,
 	}
 
 	if err := ftm.rpc.Call(&result, "debug_traceBlockByNumber", (*hexutil.Big)(block).String(), options); err != nil {

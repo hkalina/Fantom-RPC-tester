@@ -66,7 +66,7 @@ func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int, debug bool) (etxs []rpctype
 		txsHashes = append(txsHashes, etx.Hash)
 		if trace[i].Error != "" {
 			if debug {
-				log.Printf("trace of tx %s error: %s", tx.Hash, trace[i].Error)
+				log.Printf("trace of tx %s error: %s (trace len: %d)", tx.Hash, trace[i].Error, len(trace[i].Result.InternalTxs()))
 			}
 			etx.Revert = true
 		} else {
@@ -74,6 +74,9 @@ func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int, debug bool) (etxs []rpctype
 			//etx.GasUsed = (*big.Int)(trace[i].Result.GasUsed)
 			etx.Revert = trace[i].Result.Revert
 			etx.ErrorMessage = trace[i].Result.ErrorMessage
+			if debug && etx.ErrorMessage != "" {
+				log.Printf("trace of tx %s revert: %s (revert: %t)", tx.Hash, etx.ErrorMessage, etx.Revert)
+			}
 		}
 		etxs = append(etxs, etx)
 	}

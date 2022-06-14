@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/hkalina/fantom-rpc-tester/client"
 	"github.com/hkalina/fantom-rpc-tester/verifier"
 	"log"
@@ -38,6 +39,10 @@ func main() {
 
 	ftm = client.NewFtmBridge(os.Args[1])
 	defer ftm.Close()
+
+	ignoredAddresses := make(map[common.Address]bool)
+	ignoredAddresses[common.Address{}] = true
+	ignoredAddresses[common.HexToAddress("0xFC00FACE00000000000000000000000000000000")] = true
 
 	verifier.InitCache()
 	for i := startBlock; i < endBlock; i++ {
