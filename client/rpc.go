@@ -44,10 +44,6 @@ func (ftm *FtmBridge) GetBalance(address common.Address, block *big.Int) (*big.I
 	return ftm.eth.BalanceAt(context.Background(), address, block)
 }
 
-func (ftm *FtmBridge) GetBlock(block *big.Int) (*types.Block, error) {
-	return ftm.eth.BlockByNumber(context.Background(), block)
-}
-
 func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int) (etxs []rpctypes.ExternalTx, err error) {
 	block, err := ftm.GetBlock(blockNum)
 	if err != nil {
@@ -59,26 +55,23 @@ func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int) (etxs []rpctypes.ExternalTx
 	}
 
 	txsHashes := make([]common.Hash, 0)
-	for i, tx := range block.Transactions() {
+	for i, tx := range block.Txs {
 		etx := rpctypes.ExternalTx{
-			Hash: tx.Hash(),
-			GasPrice: tx.GasPrice(),
+			Hash: tx.Hash,
+			GasPrice: big.Int(tx.GasPrice),
+			From: tx.From,
+			To: tx.To,
 		}
 		txsHashes = append(txsHashes, etx.Hash)
 		if trace[i].Error != "" {
-			return nil, fmt.Errorf("trace of tx %s error: %s", tx.Hash(), trace[i].Error)
+			return nil, fmt.Errorf("trace of tx %s error: %s", tx.Hash, trace[i].Error)
 		}
 
-		etx.InternalTxs = trace[i].Result.InternalTxs() // extract internal rpctypes from trace
-		etx.GasUsed = (*big.Int)(trace[i].Result.GasUsed)
+		etx.InternalTxs = trace[i].Result.InternalTxs() // extract internal txs from trace
+		//etx.GasUsed = (*big.Int)(trace[i].Result.GasUsed)
 		etx.Revert = trace[i].Result.Revert
 		etx.ErrorMessage = trace[i].Result.ErrorMessage
 
-		// derive tx sender
-		etx.From, err = types.NewLondonSigner(tx.ChainId()).Sender(tx)
-		if err != nil {
-			return nil, fmt.Errorf("NewLondonSigner.Sender failed: %s", err)
-		}
 		etxs = append(etxs, etx)
 	}
 
@@ -90,10 +83,10 @@ func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int) (etxs []rpctypes.ExternalTx
 		if receipt.BlockNumber.Cmp(blockNum) != 0 {
 			return nil, fmt.Errorf("block number differes for %s - expected %s, got %s", receipt.TxHash, blockNum.String(), receipt.BlockNumber.String())
 		}
-		etxs[i].GasUsed = new(big.Int).SetUint64(receipt.GasUsed)
+		etxs[i].GasUsed.SetUint64(receipt.GasUsed)
 
 		// add fee internal tx
-		feeAmount := new(big.Int).Mul(etxs[i].GasPrice, etxs[i].GasUsed)
+		feeAmount := new(big.Int).Mul(&etxs[i].GasPrice, &etxs[i].GasUsed)
 		etxs[i].InternalTxs = append(etxs[i].InternalTxs, rpctypes.InternalTx{
 			From:    etxs[i].From,
 			To:      common.Address{}, // use zero-address as destination for fees (for now)
