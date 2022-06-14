@@ -16,7 +16,7 @@ type InternalTx struct {
 type ExternalTx struct {
 	Hash         common.Hash
 	From         common.Address
-	To           common.Address
+	To           *common.Address
 	InternalTxs  []InternalTx
 	GasUsed      big.Int
 	GasPrice     big.Int

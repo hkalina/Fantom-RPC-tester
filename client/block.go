@@ -20,7 +20,7 @@ type BlockTransaction struct {
 	Hash common.Hash `json:"hash"`
 	TxIndex hexutil.Big `json:"transactionIndex"`
 	From common.Address `json:"from"`
-	To common.Address `json:"to"`
+	To *common.Address `json:"to"` // null for contract creation
 	Value hexutil.Big `json:"value"`
 	GasLimit hexutil.Big `json:"gas"`
 	GasPrice hexutil.Big `json:"gasPrice"`
