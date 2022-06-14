@@ -39,10 +39,12 @@ func main() {
 	ftm = client.NewFtmBridge(os.Args[1])
 	defer ftm.Close()
 
+	verifier.InitCache()
 	for i := startBlock; i < endBlock; i++ {
 		err := verifier.VerifyBlock(big.NewInt(i), ftm, debug)
 		if err != nil {
 			log.Fatalf("VerifyBlock %d failed: %s", i, err)
 		}
 	}
+	log.Printf("Finished successfuly")
 }

@@ -12,7 +12,7 @@ func VerifyBlock(blockNum *big.Int, ftm *client.FtmBridge, debug bool) error {
 	log.Printf("Verifying block %s...\n", blockNum.String())
 	prevBlockNum := new(big.Int).Sub(blockNum, big.NewInt(1))
 
-	txs, err := ftm.GetBlockTxs(blockNum)
+	txs, err := ftm.GetBlockTxs(blockNum, debug)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func VerifyBlock(blockNum *big.Int, ftm *client.FtmBridge, debug bool) error {
 	}
 	for _, address := range movements.Addresses {
 		amount := movements.Map[address]
-		oldBalance, err := ftm.GetBalance(address, prevBlockNum)
+		oldBalance, err := GetBalanceFromCacheOrLoad(address, prevBlockNum, ftm.GetBalance)
 		if err != nil {
 			return fmt.Errorf("unable to get balance for block %s: %s", prevBlockNum.String(), err)
 		}
@@ -34,6 +34,7 @@ func VerifyBlock(blockNum *big.Int, ftm *client.FtmBridge, debug bool) error {
 		if err != nil {
 			return fmt.Errorf("unable to get balance for block %s: %s", prevBlockNum.String(), err)
 		}
+		StoreBalanceIntoCache(address, newBalance)
 		computedBalance := new(big.Int).Add(oldBalance, amount)
 		if computedBalance.Cmp(newBalance) != 0 {
 			computedDiff := new(big.Int).Sub(computedBalance, oldBalance)

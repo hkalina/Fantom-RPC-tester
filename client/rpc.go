@@ -45,7 +45,7 @@ func (ftm *FtmBridge) GetBalance(address common.Address, block *big.Int) (*big.I
 	return ftm.eth.BalanceAt(context.Background(), address, block)
 }
 
-func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int) (etxs []rpctypes.ExternalTx, err error) {
+func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int, debug bool) (etxs []rpctypes.ExternalTx, err error) {
 	block, err := ftm.GetBlock(blockNum)
 	if err != nil {
 		return nil, fmt.Errorf("GetBlock failed: %s", err)
@@ -65,7 +65,9 @@ func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int) (etxs []rpctypes.ExternalTx
 		}
 		txsHashes = append(txsHashes, etx.Hash)
 		if trace[i].Error != "" {
-			log.Printf("trace of tx %s error: %s", tx.Hash, trace[i].Error)
+			if debug {
+				log.Printf("trace of tx %s error: %s", tx.Hash, trace[i].Error)
+			}
 			etx.Revert = true
 		} else {
 			etx.InternalTxs = trace[i].Result.InternalTxs() // extract internal txs from trace
