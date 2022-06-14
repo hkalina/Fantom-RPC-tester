@@ -18,6 +18,7 @@ type ExternalTx struct {
 	From         common.Address
 	InternalTxs  []InternalTx
 	GasUsed      *big.Int
+	GasPrice     *big.Int
 	Revert       bool
 	ErrorMessage string
 }

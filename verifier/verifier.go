@@ -18,8 +18,9 @@ func VerifyBlock(blockNum *big.Int, ftm *client.FtmBridge) error {
 		return err
 	}
 
-	movements := MergeBlockMovements(txs)
-	for address, amount := range movements {
+	movements := MergeTxsIntoAggregatedBlockMovements(txs)
+	for _, address := range movements.Addresses {
+		amount := movements.Map[address]
 		fmt.Printf("Move: %s: %s\n", address, amount.String())
 		oldBalance, err := ftm.GetBalance(address, prevBlockNum)
 		if err != nil {
@@ -31,8 +32,12 @@ func VerifyBlock(blockNum *big.Int, ftm *client.FtmBridge) error {
 		}
 		computedBalance := new(big.Int).Add(oldBalance, amount)
 		if computedBalance.Cmp(newBalance) != 0 {
-			return fmt.Errorf("unexpected balance for %s at block %s:\n previous: %s\n computed: %s\n real:     %s",
-				address, blockNum.String(), oldBalance.String(), computedBalance.String(), newBalance.String())
+			computedDiff := new(big.Int).Sub(computedBalance, oldBalance)
+			realDiff := new(big.Int).Sub(newBalance, oldBalance)
+			return fmt.Errorf(
+				"unexpected balance for %s at block %s:\n" +
+					" previous: %s\n computed: %s  (diff: %s)\n real:     %s  (diff: %s)",
+				address, blockNum.String(), oldBalance.String(), computedBalance.String(), computedDiff.String(), newBalance.String(), realDiff.String())
 		} else {
 			fmt.Printf("New balance OK\n")
 		}
@@ -41,25 +46,32 @@ func VerifyBlock(blockNum *big.Int, ftm *client.FtmBridge) error {
 	return nil
 }
 
-type BlockMovements map[common.Address]*big.Int
+type BlockMovements struct {
+	Map map[common.Address]*big.Int
+	Addresses []common.Address // for deterministic Map iterating
+}
 
-func (bm BlockMovements) Add(address common.Address, amount *big.Int) {
+func (bm *BlockMovements) Add(address common.Address, amount *big.Int) {
 	if address == (common.Address{}) {
 		return // skip validation for zero address
 	}
-	item, exists := bm[address]
+	item, exists := bm.Map[address]
 	if exists {
-		bm[address] = item.Add(item, amount)
+		bm.Map[address] = item.Add(item, amount)
 	} else {
-		bm[address] = amount
+		bm.Map[address] = amount
+		bm.Addresses = append(bm.Addresses, address)
 	}
 }
 
-func MergeBlockMovements(txs []rpctypes.ExternalTx) BlockMovements {
-	movements := make(BlockMovements)
+func MergeTxsIntoAggregatedBlockMovements(txs []rpctypes.ExternalTx) *BlockMovements {
+	movements := new(BlockMovements)
+	movements.Map = make(map[common.Address]*big.Int)
 	for _, tx := range txs {
 		for _, itx := range tx.InternalTxs {
+			fmt.Printf("InternalTx: %s -> %s: %s\n", itx.From, itx.To, itx.Value)
 			movements.Add(itx.To, itx.Value)
+			movements.Add(itx.From, new(big.Int).Neg(itx.Value))
 		}
 	}
 	return movements
