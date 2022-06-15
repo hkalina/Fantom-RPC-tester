@@ -45,40 +45,21 @@ func (ftm *FtmBridge) GetBalance(address common.Address, block *big.Int) (*big.I
 	return ftm.eth.BalanceAt(context.Background(), address, block)
 }
 
-func allTracesSucceed(trace []TxTrace) bool {
-	for i, trc := range trace {
-		if trc.Error != "" {
-			log.Printf("trace %d error: %s", i, trc.Error)
-			return false
-		}
-	}
-	return true
-}
-
 func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int, debug bool) (etxs []rpctypes.ExternalTx, err error) {
-	block, err := ftm.GetBlock(blockNum)
+	block, err := ftm.getBlock(blockNum)
 	if err != nil {
-		return nil, fmt.Errorf("GetBlock failed: %s", err)
+		return nil, fmt.Errorf("getBlock failed: %s", err)
 	}
-
-	var trace []TxTrace
-	var ok bool
-	for i := 0; i < 3; i++ {
-		trace, err = ftm.TraceBlockByNumber(blockNum)
-		if err != nil {
-			return nil, fmt.Errorf("TraceBlockByNumber failed: %s", err)
-		}
-		if allTracesSucceed(trace) {
-			ok = true
-			break
-		}
-	}
-	if !ok {
-		return nil, fmt.Errorf("all TraceBlockByNumber attempts failed")
+	trace, err := ftm.traceBlockByNumber(blockNum)
+	if err != nil {
+		return nil, fmt.Errorf("TraceBlockByNumber failed: %s", err)
 	}
 
 	txsHashes := make([]common.Hash, 0)
 	for i, tx := range block.Txs {
+		if trace[i].Error != "" {
+			return nil, fmt.Errorf("trace of tx %s error: %s", tx.Hash, trace[i].Error)
+		}
 		etx := rpctypes.ExternalTx{
 			Hash:     tx.Hash,
 			GasPrice: big.Int(tx.GasPrice),
@@ -96,7 +77,7 @@ func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int, debug bool) (etxs []rpctype
 		etxs = append(etxs, etx)
 	}
 
-	receipts, err := ftm.GetReceipts(txsHashes)
+	receipts, err := ftm.getReceipts(txsHashes)
 	for i, receipt := range receipts {
 		if receipt.TxHash != etxs[i].Hash {
 			return nil, fmt.Errorf("receipt for %s returned when %s requested", receipt.TxHash, etxs[i].Hash)
@@ -119,7 +100,7 @@ func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int, debug bool) (etxs []rpctype
 	return etxs, nil
 }
 
-func (ftm *FtmBridge) GetReceipts(
+func (ftm *FtmBridge) getReceipts(
 	txs []common.Hash,
 ) ([]*types.Receipt, error) {
 	receipts := make([]*types.Receipt, len(txs))

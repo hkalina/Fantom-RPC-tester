@@ -27,8 +27,8 @@ type Call struct {
 	Value        *hexutil.Big   `json:"value"`
 	GasUsed      *hexutil.Big   `json:"gasUsed"`
 	Revert       bool           `json:"revert,omitempty"`
-	ErrorMessage string `json:"error,omitempty"`
-	Calls        []Call `json:"calls,omitempty"`
+	ErrorMessage string         `json:"error,omitempty"`
+	Calls        []Call         `json:"calls,omitempty"`
 }
 
 func (data *Call) InternalTxs() (txs []rpctypes.InternalTx) {
@@ -50,10 +50,12 @@ func (data *Call) InternalTxs() (txs []rpctypes.InternalTx) {
 	return
 }
 
-func (ftm *FtmBridge) TraceBlockByNumber(block *big.Int) ([]TxTrace, error) {
+func (ftm *FtmBridge) traceBlockByNumber(block *big.Int) ([]TxTrace, error) {
 	var result []TxTrace
+	timeout := "20s"
 	options := tracers.TraceConfig{
-		Tracer: &callTracerCode,
+		Tracer:  &callTracerCode,
+		Timeout: &timeout,
 	}
 
 	if err := ftm.rpc.Call(&result, "debug_traceBlockByNumber", (*hexutil.Big)(block).String(), options); err != nil {
