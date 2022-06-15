@@ -20,6 +20,5 @@ type ExternalTx struct {
 	InternalTxs  []InternalTx
 	GasUsed      big.Int
 	GasPrice     big.Int
-	Revert       bool
 	ErrorMessage string
 }

@@ -26,13 +26,12 @@ type Call struct {
 	To           *common.Address `json:"to"`
 	Value        *hexutil.Big   `json:"value"`
 	GasUsed      *hexutil.Big   `json:"gasUsed"`
-	Revert       bool           `json:"revert,omitempty"`
 	ErrorMessage string         `json:"error,omitempty"`
 	Calls        []Call         `json:"calls,omitempty"`
 }
 
 func (data *Call) InternalTxs() (txs []rpctypes.InternalTx) {
-	if data.Revert != false || data.ErrorMessage != "" {
+	if data.ErrorMessage != "" {
 		return
 	}
 	// TODO: check data.Type?

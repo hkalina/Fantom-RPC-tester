@@ -30,7 +30,7 @@ func (v *Verifier) VerifyRange(startBlock int64, endBlock int64, ftm *client.Ftm
 			log.Fatalf(v.prefix+ "VerifyBlock %d failed: %s", i, err)
 		}
 	}
-	v.printf("Finished successfuly")
+	v.printf("Finished successfully")
 }
 
 func (v *Verifier) VerifyBlock(blockNum int64, ftm *client.FtmBridge) error {

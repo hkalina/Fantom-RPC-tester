@@ -67,8 +67,6 @@ func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int) (etxs []rpctypes.ExternalTx
 		}
 		txsHashes = append(txsHashes, etx.Hash)
 		etx.InternalTxs = trace[i].Result.InternalTxs() // extract internal txs from trace
-		//etx.GasUsed = (*big.Int)(trace[i].Result.GasUsed)
-		etx.Revert = trace[i].Result.Revert
 		etx.ErrorMessage = trace[i].Result.ErrorMessage
 		etxs = append(etxs, etx)
 	}
