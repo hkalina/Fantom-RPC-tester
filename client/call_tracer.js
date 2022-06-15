@@ -197,12 +197,12 @@
     result: function(ctx, db) {
         var result = {
             type:    ctx.type,
-            from:    toHex(ctx.from),
-            to:      toHex(ctx.to),
-            value:   '0x' + ctx.value.toString(16),
-            gas:     '0x' + bigInt(ctx.gas).toString(16),
-            gasUsed: '0x' + bigInt(ctx.gasUsed).toString(16),
-            input:   toHex(ctx.input),
+            from:    ctx.from ? toHex(ctx.from) : null,
+            to:      ctx.to ? toHex(ctx.to) : null,
+            value:   ctx.value ? '0x' + ctx.value.toString(16) : null,
+            gas:     ctx.gas ? '0x' + bigInt(ctx.gas).toString(16) : null,
+            gasUsed: ctx.gasUsed ? '0x' + bigInt(ctx.gasUsed).toString(16) : null,
+            input:   ctx.input ? toHex(ctx.input) : null,
             output:  toHex(ctx.output),
             time:    ctx.time,
         };
@@ -217,36 +217,6 @@
         if (result.error !== undefined && (result.error !== "execution reverted" || result.output ==="0x")) {
             delete result.output;
         }
-        return this.finalize(result);
-    },
-
-    // finalize recreates a call object using the final desired field oder for json
-    // serialization. This is a nicety feature to pass meaningfully ordered results
-    // to users who don't interpret it, just display it.
-    finalize: function(call) {
-        var sorted = {
-            type:    call.type,
-            from:    call.from,
-            to:      call.to,
-            value:   call.value,
-            gas:     call.gas,
-            gasUsed: call.gasUsed,
-            input:   call.input,
-            output:  call.output,
-            error:   call.error,
-            time:    call.time,
-            calls:   call.calls,
-        }
-        for (var key in sorted) {
-            if (sorted[key] === undefined) {
-                delete sorted[key];
-            }
-        }
-        if (sorted.calls !== undefined) {
-            for (var i=0; i<sorted.calls.length; i++) {
-                sorted.calls[i] = this.finalize(sorted.calls[i]);
-            }
-        }
-        return sorted;
+        return result;
     }
 }

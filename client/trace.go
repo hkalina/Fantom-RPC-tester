@@ -22,8 +22,8 @@ type TxTrace struct {
 // Call represents one call operation in a TxTrace.
 type Call struct {
 	Type         string         `json:"type"`
-	From         common.Address `json:"from"`
-	To           common.Address `json:"to"`
+	From         *common.Address `json:"from"`
+	To           *common.Address `json:"to"`
 	Value        *hexutil.Big   `json:"value"`
 	GasUsed      *hexutil.Big   `json:"gasUsed"`
 	Revert       bool           `json:"revert,omitempty"`
@@ -38,8 +38,8 @@ func (data *Call) InternalTxs() (txs []rpctypes.InternalTx) {
 	// TODO: check data.Type?
 	if data.Value != nil && data.Value.ToInt().Sign() != 0 {
 		txs = append(txs, rpctypes.InternalTx{
-			From:    data.From,
-			To:      data.To,
+			From:    *data.From,
+			To:      *data.To,
 			Value:   (*big.Int)(data.Value),
 			GasUsed: (*big.Int)(data.GasUsed),
 		})
