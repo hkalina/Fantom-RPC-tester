@@ -12,7 +12,7 @@ type BalanceCache struct {
 
 func NewBalanceCache() *BalanceCache {
 	c := BalanceCache{}
-	c.cache.Resize(1_000_000)
+	c.cache.Resize(100_000_000)
 	return &c
 }
 

@@ -51,7 +51,7 @@ func (data *Call) InternalTxs() (txs []rpctypes.InternalTx) {
 
 func (ftm *FtmBridge) traceBlockByNumber(block *big.Int) ([]TxTrace, error) {
 	var result []TxTrace
-	timeout := "20s"
+	timeout := "5m"
 	options := tracers.TraceConfig{
 		Tracer:  &callTracerCode,
 		Timeout: &timeout,
