@@ -45,38 +45,53 @@ func (ftm *FtmBridge) GetBalance(address common.Address, block *big.Int) (*big.I
 	return ftm.eth.BalanceAt(context.Background(), address, block)
 }
 
+func allTracesSucceed(trace []TxTrace) bool {
+	for i, trc := range trace {
+		if trc.Error != "" {
+			log.Printf("trace %d error: %s", i, trc.Error)
+			return false
+		}
+	}
+	return true
+}
+
 func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int, debug bool) (etxs []rpctypes.ExternalTx, err error) {
 	block, err := ftm.GetBlock(blockNum)
 	if err != nil {
 		return nil, fmt.Errorf("GetBlock failed: %s", err)
 	}
-	trace, err := ftm.TraceBlockByNumber(blockNum)
-	if err != nil {
-		return nil, fmt.Errorf("TraceBlockByNumber failed: %s", err)
+
+	var trace []TxTrace
+	var ok bool
+	for i := 0; i < 3; i++ {
+		trace, err = ftm.TraceBlockByNumber(blockNum)
+		if err != nil {
+			return nil, fmt.Errorf("TraceBlockByNumber failed: %s", err)
+		}
+		if allTracesSucceed(trace) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return nil, fmt.Errorf("all TraceBlockByNumber attempts failed")
 	}
 
 	txsHashes := make([]common.Hash, 0)
 	for i, tx := range block.Txs {
 		etx := rpctypes.ExternalTx{
-			Hash: tx.Hash,
+			Hash:     tx.Hash,
 			GasPrice: big.Int(tx.GasPrice),
-			From: tx.From,
-			To: tx.To,
+			From:     tx.From,
+			To:       tx.To,
 		}
 		txsHashes = append(txsHashes, etx.Hash)
-		if trace[i].Error != "" {
-			if debug {
-				log.Printf("trace of tx %s error: %s (trace len: %d)", tx.Hash, trace[i].Error, len(trace[i].Result.InternalTxs()))
-			}
-			etx.Revert = true
-		} else {
-			etx.InternalTxs = trace[i].Result.InternalTxs() // extract internal txs from trace
-			//etx.GasUsed = (*big.Int)(trace[i].Result.GasUsed)
-			etx.Revert = trace[i].Result.Revert
-			etx.ErrorMessage = trace[i].Result.ErrorMessage
-			if debug && etx.ErrorMessage != "" {
-				log.Printf("trace of tx %s revert: %s (revert: %t)", tx.Hash, etx.ErrorMessage, etx.Revert)
-			}
+		etx.InternalTxs = trace[i].Result.InternalTxs() // extract internal txs from trace
+		//etx.GasUsed = (*big.Int)(trace[i].Result.GasUsed)
+		etx.Revert = trace[i].Result.Revert
+		etx.ErrorMessage = trace[i].Result.ErrorMessage
+		if debug && etx.ErrorMessage != "" {
+			log.Printf("trace of tx %s revert: %s (revert: %t)", tx.Hash, etx.ErrorMessage, etx.Revert)
 		}
 		etxs = append(etxs, etx)
 	}
