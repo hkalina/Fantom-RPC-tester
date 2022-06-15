@@ -8,7 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/hkalina/fantom-rpc-tester/rpctypes"
-	"log"
 	"math/big"
 )
 
@@ -45,7 +44,7 @@ func (ftm *FtmBridge) GetBalance(address common.Address, block *big.Int) (*big.I
 	return ftm.eth.BalanceAt(context.Background(), address, block)
 }
 
-func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int, debug bool) (etxs []rpctypes.ExternalTx, err error) {
+func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int) (etxs []rpctypes.ExternalTx, err error) {
 	block, err := ftm.getBlock(blockNum)
 	if err != nil {
 		return nil, fmt.Errorf("getBlock failed: %s", err)
@@ -71,9 +70,6 @@ func (ftm *FtmBridge) GetBlockTxs(blockNum *big.Int, debug bool) (etxs []rpctype
 		//etx.GasUsed = (*big.Int)(trace[i].Result.GasUsed)
 		etx.Revert = trace[i].Result.Revert
 		etx.ErrorMessage = trace[i].Result.ErrorMessage
-		if debug && etx.ErrorMessage != "" {
-			log.Printf("trace of tx %s revert: %s (revert: %t)", tx.Hash, etx.ErrorMessage, etx.Revert)
-		}
 		etxs = append(etxs, etx)
 	}
 

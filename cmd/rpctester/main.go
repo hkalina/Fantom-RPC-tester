@@ -2,21 +2,21 @@ package main
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/hkalina/fantom-rpc-tester/client"
 	"github.com/hkalina/fantom-rpc-tester/verifier"
 	"log"
-	"math/big"
 	"os"
 	"strconv"
+	"sync"
 )
 
 var ftm *client.FtmBridge
 var debug bool
+var wg sync.WaitGroup
 
 func main() {
-	if len(os.Args) != 4 && len(os.Args) != 5 {
-		fmt.Printf("Usage: %s http://rpc1/ [blockNumberStart] [blockNumberEnd] [debug]\n", os.Args[0])
+	if len(os.Args) != 5 && len(os.Args) != 6 {
+		fmt.Printf("Usage: %s http://rpc1/ [blockNumberStart] [blockNumberEnd] [threads] [debug]\n", os.Args[0])
 		os.Exit(1)
 	}
 
@@ -33,23 +33,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(os.Args) == 5 && os.Args[4] == "debug" {
+	threads, err := strconv.ParseInt(os.Args[4], 10, 32)
+	if err != nil {
+		log.Fatal("Invalid the threads count")
+	}
+
+	if len(os.Args) == 6 && os.Args[5] == "debug" {
 		debug = true
 	}
 
-	ftm = client.NewFtmBridge(os.Args[1])
-	defer ftm.Close()
+	blocksPerThread := (endBlock - startBlock) / threads + 1
 
-	ignoredAddresses := make(map[common.Address]bool)
-	ignoredAddresses[common.Address{}] = true
-	ignoredAddresses[common.HexToAddress("0xFC00FACE00000000000000000000000000000000")] = true
+	start := startBlock
+	wg.Add(int(threads))
+	for thread := 0; thread < int(threads); thread++ {
+		verif := verifier.NewVerifier(thread, debug)
+		log.Printf("starting %d...", start)
+		go func(startBlock, endBlock int64) {
+			defer wg.Done()
 
-	verifier.InitCache()
-	for i := startBlock; i < endBlock; i++ {
-		err := verifier.VerifyBlock(big.NewInt(i), ftm, debug)
-		if err != nil {
-			log.Fatalf("VerifyBlock %d failed: %s", i, err)
-		}
+			ftm = client.NewFtmBridge(os.Args[1])
+			defer ftm.Close()
+
+			verif.VerifyRange(startBlock, endBlock, ftm)
+
+		}(start, start + blocksPerThread)
+		start += blocksPerThread
 	}
-	log.Printf("Finished successfuly")
+	wg.Wait()
 }

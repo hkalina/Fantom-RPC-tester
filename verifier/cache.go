@@ -6,22 +6,26 @@ import (
 	"math/big"
 )
 
-var cache tinylru.LRU
-
-func InitCache() {
-	cache.Resize(1_000_000)
+type BalanceCache struct {
+	cache tinylru.LRU
 }
 
-func GetBalanceFromCacheOrLoad(address common.Address, block *big.Int, loader func(common.Address, *big.Int) (*big.Int, error)) (*big.Int, error) {
-	val, ok := cache.Get(address)
+func NewBalanceCache() *BalanceCache {
+	c := BalanceCache{}
+	c.cache.Resize(1_000_000)
+	return &c
+}
+
+func (c *BalanceCache) GetBalanceFromCacheOrLoad(address common.Address, block *big.Int, loader func(common.Address, *big.Int) (*big.Int, error)) (*big.Int, error) {
+	val, ok := c.cache.Get(address)
 	if ok {
 		return val.(*big.Int), nil
 	}
 	balance, err := loader(address, block)
-	cache.Set(address, balance)
+	c.cache.Set(address, balance)
 	return balance, err
 }
 
-func StoreBalanceIntoCache(address common.Address, balance *big.Int) {
-	cache.Set(address, balance)
+func (c *BalanceCache) StoreBalanceIntoCache(address common.Address, balance *big.Int) {
+	c.cache.Set(address, balance)
 }
