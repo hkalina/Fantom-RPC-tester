@@ -48,7 +48,11 @@ func main() {
 	wg.Add(int(threads))
 	for thread := 0; thread < int(threads); thread++ {
 		verif := verifier.NewVerifier(thread, debug)
-		log.Printf("starting %d...", start)
+		end := start + blocksPerThread
+		if end > endBlock {
+			end = endBlock
+		}
+
 		go func(startBlock, endBlock int64) {
 			defer wg.Done()
 
@@ -57,8 +61,8 @@ func main() {
 
 			verif.VerifyRange(startBlock, endBlock, ftm)
 
-		}(start, start + blocksPerThread)
-		start += blocksPerThread
+		}(start, end)
+		start += blocksPerThread + 1
 	}
 	wg.Wait()
 }

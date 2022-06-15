@@ -24,7 +24,7 @@ func NewVerifier(id int, debug bool) *Verifier {
 
 func (v *Verifier) VerifyRange(startBlock int64, endBlock int64, ftm *client.FtmBridge) {
 	v.printf("Started on range %d-%d\n", startBlock, endBlock)
-	for i := startBlock; i < endBlock; i++ {
+	for i := startBlock; i <= endBlock; i++ {
 		err := v.VerifyBlock(i, ftm)
 		if err != nil {
 			log.Fatalf(v.prefix+ "VerifyBlock %d failed: %s", i, err)
