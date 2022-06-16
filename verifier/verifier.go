@@ -7,7 +7,9 @@ import (
 	"github.com/hkalina/fantom-rpc-tester/rpctypes"
 	"log"
 	"math/big"
+	"math/rand"
 	"strings"
+	"time"
 )
 
 type Verifier struct {
@@ -29,7 +31,7 @@ func (v *Verifier) VerifyRange(startBlock int64, endBlock int64, ftm *client.Ftm
 	for i := startBlock; i <= endBlock; i++ {
 		err := v.VerifyBlockRepeatedly(i, ftm)
 		if err != nil {
-			log.Fatalf(v.prefix+ "VerifyBlock %d failed: %s", i, err)
+			log.Fatalf(v.prefix+"VerifyBlock %d failed: %s", i, err)
 		}
 	}
 	v.printf("Finished successfully")
@@ -42,6 +44,7 @@ func (v *Verifier) VerifyBlockRepeatedly(blockNum int64, ftm *client.FtmBridge) 
 			return nil
 		}
 		v.printf("VerifyBlock(%d) failed (attempt %d): %s\n", blockNum, attempt, err)
+		time.Sleep((time.Duration(rand.Intn(1000)) + 100) * time.Millisecond)
 	}
 	return err
 }
@@ -86,7 +89,7 @@ func (v *Verifier) VerifyBlock(blockNum int64, ftm *client.FtmBridge) error {
 			computedDiff := new(big.Int).Sub(computedBalance, oldBalance)
 			realDiff := new(big.Int).Sub(newBalance, oldBalance)
 			return fmt.Errorf(
-				"unexpected balance for %s at block %d:\n" +
+				"unexpected balance for %s at block %d:\n"+
 					" previous: %s\n computed: %s  (diff: %s)\n real:     %s  (diff: %s)",
 				address, blockNum, oldBalance.String(), computedBalance.String(), computedDiff.String(), newBalance.String(), realDiff.String())
 		}
@@ -101,7 +104,7 @@ func (v *Verifier) VerifyBlock(blockNum int64, ftm *client.FtmBridge) error {
 }
 
 func (v *Verifier) printf(format string, args ...interface{}) {
-	log.Printf(v.prefix+ format, args...)
+	log.Printf(v.prefix+format, args...)
 }
 
 func (v *Verifier) printTxs(etxs []rpctypes.ExternalTx) {
