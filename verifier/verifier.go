@@ -44,7 +44,7 @@ func (v *Verifier) VerifyBlockRepeatedly(blockNum int64, ftm *client.FtmBridge) 
 			return nil
 		}
 		v.printf("VerifyBlock(%d) failed (attempt %d): %s\n", blockNum, attempt, err)
-		time.Sleep((time.Duration(rand.Intn(1000)) + 100) * time.Millisecond)
+		time.Sleep(time.Duration(1000 * attempt + rand.Intn(1000)) * time.Millisecond)
 	}
 	return err
 }
