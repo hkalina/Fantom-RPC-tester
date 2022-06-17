@@ -38,15 +38,17 @@ func (v *Verifier) VerifyRange(startBlock int64, endBlock int64, ftm *client.Ftm
 }
 
 func (v *Verifier) VerifyBlockRepeatedly(blockNum int64, ftm *client.FtmBridge) (err error) {
-	for attempt := 1; attempt <= 5; attempt++ {
+	var errBuilder strings.Builder
+	for attempt := 1; attempt <= 15; attempt++ {
 		err = v.VerifyBlock(blockNum, ftm)
 		if err == nil || strings.HasPrefix(err.Error(), "unexpected balance") {
-			return nil
+			return err
 		}
 		v.printf("VerifyBlock(%d) failed (attempt %d): %s\n", blockNum, attempt, err)
+		fmt.Fprintf(&errBuilder, "Attempt %d: %s\n", attempt, err)
 		time.Sleep(time.Duration(1000 * attempt + rand.Intn(1000)) * time.Millisecond)
 	}
-	return err
+	return fmt.Errorf("Repeated block %d error:\n%s", blockNum, errBuilder.String())
 }
 
 func (v *Verifier) VerifyBlock(blockNum int64, ftm *client.FtmBridge) error {
