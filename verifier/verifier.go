@@ -29,6 +29,8 @@ func NewVerifier(id int, debug bool) *Verifier {
 func (v *Verifier) VerifyRange(startBlock int64, endBlock int64, ftm *client.FtmBridge) {
 	v.printf("Started on range %d-%d\n", startBlock, endBlock)
 	for i := startBlock; i <= endBlock; i++ {
+		percent := float32(i - startBlock) / float32(endBlock - startBlock) * 100
+		v.printf("Verifying block %d... (%.1f%%)\n", i, percent)
 		err := v.VerifyBlockRepeatedly(i, ftm)
 		if err != nil {
 			log.Fatalf(v.prefix+"VerifyBlock %d failed: %s", i, err)
@@ -52,7 +54,6 @@ func (v *Verifier) VerifyBlockRepeatedly(blockNum int64, ftm *client.FtmBridge) 
 }
 
 func (v *Verifier) VerifyBlock(blockNum int64, ftm *client.FtmBridge) error {
-	v.printf("Verifying block %d...\n", blockNum)
 	currBlockNum := big.NewInt(blockNum)
 	prevBlockNum := big.NewInt(blockNum - 1)
 
